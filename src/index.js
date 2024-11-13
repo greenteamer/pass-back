@@ -2,22 +2,26 @@ const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const { PKPass } = require("passkit-generator");
+const googlePass = require("./googlePass");
 
 const certDirectory = path.resolve(process.cwd(), "src", "cert");
 const wwdr = fs.readFileSync(path.join(certDirectory, "wwdr.pem"));
 const signerCert = fs.readFileSync(path.join(certDirectory, "signerCert.pem"));
 const signerKey = fs.readFileSync(path.join(certDirectory, "signerKey.key"));
 
+const googlePK = require("./cert/test-wallet-project-pk.json");
+const googlePrivateKey = googlePK.private_key;
+
 const fastify = require("fastify")({
   logger: true,
 });
 
 // Declare a route
-fastify.get("/", function (request, reply) {
-  reply.send({ status: "ok" });
+fastify.get("/", function (request, response) {
+  response.send({ status: "ok" });
 });
 
-fastify.post("/", async (request, reply) => {
+fastify.post("/apple", async (request, response) => {
   const { name } = request.body;
 
   // Feel free to use any other kind of UID here or even read an
@@ -54,9 +58,21 @@ fastify.post("/", async (request, reply) => {
     });
   }
 
-  reply.header("Content-Type", "application/vnd-apple.pkpass");
+  response.header("Content-Type", "application/vnd-apple.pkpass");
 
-  reply.send(pass.getAsBuffer());
+  response.send(pass.getAsBuffer());
+});
+
+fastify.post("/android", async (request, response) => {
+  // Adding some settings to be written inside pass.json
+
+  let serialNumber = `Alex_Korovkin_${Date.now()}`;
+  const jwt = await googlePass.handleGooglePass(
+    serialNumber,
+    googlePK.private_key,
+  );
+  response.header("Content-Type", "application/text");
+  response.send(jwt);
 });
 
 // Start the server

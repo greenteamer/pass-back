@@ -5,6 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "fastify": "^5.1.0",
+    "jose": "^5.9.6",
     "passkit-generator": "^3.2.0"
   }
 }
